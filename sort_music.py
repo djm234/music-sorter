@@ -34,16 +34,16 @@ def get_track_info_from_files(filepath_dict):
                     'artist':artist,
                     'album':album,
                     'title':title,
-                    'filepath':path,
+                    'source':path,
                     'bitrate':bitrate,
                     'filetype':filetype,
                     }
                     records.append(d)
                 else:
                     # Perhaps audio file was not really an mp3, or is corrupt
-                    fails.append({'filename':filename, 'filepath':path, 'reason':'tag=None', 'filetype':filetype})
+                    fails.append({'filename':filename, 'source':path, 'reason':'tag=None', 'filetype':filetype})
             except:
-                fails.append({'filename':filename, 'filepath':path, 'reason':'audiofile=bad', 'filetype':filetype})
+                fails.append({'filename':filename, 'source':path, 'reason':'audiofile=bad', 'filetype':filetype})
 
     # Create dataframe
     records = pd.DataFrame().from_dict(records)
@@ -54,7 +54,7 @@ def clean_string(s):
     s = s.replace('\x00', '')
     return str(s).lstrip().rstrip()
 
-def find_files_in_subdirs(parent_dir, filetypes=['.mp3']):
+def find_files_in_subdirs(parent_dir, filetypes=['.mp3', '.wav', '.ogg', '.flac', '.wma', '.mp4', '.m4a']):
     filetypes = [i.lower() for i in filetypes]
     filepath_dict = {}
     filecount = 0
@@ -76,8 +76,7 @@ def remove_duplicate_tracks(df):
     print("There were {} duplicates, which have been removed from the record".format(pre-len(df)))
     return df
 
-
-def validate_artist_names(df, reference_artists):
+def validate_artist_names(df, reference_artists, blank_name='_Unknown', capitalise_leading_chars=True):
     # Keep note which artists were found in the directory of artists
     artist_match = []
     approved_names = []
@@ -93,9 +92,15 @@ def validate_artist_names(df, reference_artists):
         if hit_found == False:
             artist_match.append(False)
             approved_names.append(name)
-
+    # Add to dataframe
     df['artist_match'] = artist_match
     df['approved_name'] = approved_names
+    # Some artists are not found at all, or are completely blank.
+    # It would be good to guess artist from the filename. Until then, we shall call them all something else:
+    missing_artist_tags = ['', 'no artist', 'unknown artist', 'unknown', 'none', 'artist']
+    df['approved_name'] = df['approved_name'].apply(lambda x: blank_name if str(x).lower() in missing_artist_tags else x)
+    if capitalise_leading_chars:
+        df['approved_name'] = df['approved_name'].apply(lambda x: x[0].upper()+x[1:])
     print("There are {} confirmed artists with a total of {} tracks".format(len(df[df['artist_match']==True]['artist'].unique()),
                                                                             len(df[df['artist_match']==True])))
     return df
@@ -108,22 +113,97 @@ def copyfile(source, destination):
 
 def sanitise_foldername(s):
     # Strip bad chars for path names
-    return ''.join([c for c in s if c not in '?|"<>:;/\\.,*'])
+    return ''.join([c for c in s if c not in '?|"<>:;/\\.`\',*'])
+
+def map_out_directory_structure(df, out_dir='sorted_music/', include_album_in_path=False):
+    print("Applying directory structure logic:")
+    all_target_directories = []
+    all_destinations = []
+    for i in tqdm.tqdm(range(len(df))):
+        # Get row information
+        row = df.iloc[i]
+        # Use the 'approved' name we found earlier
+        artist = row['approved_name']
+        album = row['album']
+        title = row['title']
+        source = row['source']
+        fname = os.path.basename(source)
+        # Append artist name to out directory
+        artist = sanitise_foldername(artist)
+        target_dir = os.path.join(out_dir, artist)
+        # Add album name, if applicable
+        if include_album_in_path:
+            if not pd.isnull(album):
+                album = sanitise_foldername(album)
+                target_dir = os.path.join(target_dir, album)
+        # Add filename
+        destination = os.path.join(target_dir, fname)
+        # Store
+        all_target_directories.append(target_dir)
+        all_destinations.append(destination)
+    # Add to dataframe
+    df['target_dir'] = all_target_directories
+    df['destination'] = all_destinations
+    return df
+
+def backup_files_to_new_directory_structure(df):
+    print("Backup music to destinations:")
+    for i in tqdm.tqdm(range(len(df))):
+        # Get row information
+        row = df.iloc[i]
+        target_dir = row['target_dir']
+        destination = row['destination']
+        source = row['source']
+        # Check if the directory exists
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        # Check if file already present before copying
+        if not os.path.exists(destination):
+            copyfile(source, destination)
+    return
+
+def custom_tag_music(df, keywords, searchfields, tagname='custom_tag', case_sensitive=True):
+    # Given a list of keywords, and a selection of fields, tag true/false if a keyword is present
+    # For example, one may wish to tag xmas songs and store them in a separate directory
+    if not case_sensitive:
+        keywords = [str(k).lower() for k in keywords]
+    keyword_matches = []
+    for i in range(len(df)):
+        row = df.iloc[i]
+        found_match = False
+        for c in searchfields:
+            s = str(row[c])
+            if not case_sensitive:
+                s = s.lower()
+            for k in keywords:
+                if k in s:
+                    found_match=True
+        keyword_matches.append(found_match)
+    df[tagname] = keyword_matches
+    return df
 
 
 if __name__ == '__main__':
-    # Add tqdm to pandas apply functions
-    tqdm.tqdm.pandas(desc="Pandas apply progress")
-
+    ############################
+    #         Settings
+    ############################
     # Directory to scan
     in_dir = '../mp3/'
     # Directory to copy files to that we process
     out_dir = '../sorted_music/'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+    # Should the files be sorted according to album also (if this information is available)?
+    include_album_in_path = False
+    # Keep a record of the data in the output directory
+    store_track_data = True
+    ############################
+
+    # Add tqdm to pandas apply functions
+    tqdm.tqdm.pandas(desc="Pandas apply progress")
 
     # Find all .mp3 files in a directory/subdirectories
-    filepath_dict = find_files_in_subdirs(in_dir, filetypes=['.mp3', '.wav', '.ogg', '.flac', '.wma', '.mp4', '.m4a'])
+    filepath_dict = find_files_in_subdirs(in_dir)
     # Process files that are present
     df, fails = get_track_info_from_files(filepath_dict)
     # Remove duplicates found among directories
@@ -132,53 +212,26 @@ if __name__ == '__main__':
     print("Top 10 artists by track count that were found:\n{}".format(df['artist'].value_counts().head(10)))
     print("The following filetypes were parsed:\n{}".format(df['filetype'].value_counts()))
 
-
     # Open a list of artist names we can check against
     reference_artists = pd.read_csv('artist_data/artist_details.csv')
+
     # See which extracted artists match a reference list
     df = validate_artist_names(df, reference_artists)
 
-    # Some artists are not found at all. Until we can more accurately guess this, filter them out
-    df = df[df['approved_name']!='']
+    # There may be a number of songs present that are a particular genre we wish to classify differently
+    df = custom_tag_music(df, keywords=['xmas', 'christmas'], searchfields=['title', 'album'], tagname='xmas_song', case_sensitive=False)
+    # If any of the above conditions are met, we will call the approved_name 'xmas_songs', which will be the folder htese songs are backed up to
+    df['approved_name'] = df.apply(lambda row: '_Xmas_songs' if row['xmas_song']==True else row['approved_name'], axis=1)
 
-    # Save information to file
-    df.to_csv(os.path.join(out_dir,'musicFileRecord.csv'))
+    # Map out the directory structure that will be followed later
+    df = map_out_directory_structure(df, out_dir, include_album_in_path)
 
-    include_album_in_path = False
+    # Backup the music files to the new destination
+    backup_files_to_new_directory_structure(df)
 
-    for i in tqdm.tqdm(range(len(df))):
-        row = df.iloc[i]
-
-        # Use the 'approved' name we found earlier
-        artist = row['approved_name']
-        artist_match = row['artist_match']
-        album = row['album']
-        title = row['title']
-        source = row['filepath']
-        fname = os.path.basename(source)
-
-        artist = sanitise_foldername(artist)
-
-        # Append artist name to out directory
-        target_dir = os.path.join(out_dir, artist)
-        # Add album name, if applicable
-        if include_album_in_path:
-            if not pd.isnull(album):
-                album = sanitise_foldername(album)
-                target_dir = os.path.join(target_dir, album)
-
-        # Check if the directory exists
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-
-        # Add filename
-        destination = os.path.join(target_dir, fname)
-
-        # Check if file already present
-        if not os.path.exists(destination):
-            #print("Copying {} to: {}".format(fname, target_dir))
-            copyfile(source, destination)
-
+    if store_track_data:
+        # Save information to file
+        df.to_csv(os.path.join(out_dir,'musicFileRecord.csv'))
 
 
     embed()
