@@ -18,7 +18,7 @@ if __name__ == '__main__':
     "page4.csv":"https://gist.github.com/mbejda/9912f7a366c62c1f296c/raw/dd94a25492b3062f4ca0dc2bb2cdf23fec0896ea/10000-MTV-Music-Artists-page-4.csv",
     }
 
-    data_dir = 'artist_data'
+    data_dir = os.path.join(os.path.dirname(__file__),'data')
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 

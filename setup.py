@@ -1,10 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+#py_modules=['sort_music'],
 
 setup(
-    name='Music-Sorter',
+    name='music-sorter',
     version='0.1',
     author='Dan Mason',
-    packages=['music_sorter',],
+    packages=find_packages(),
     description = ("A tool to help sort out a messy library of music files into"
                    "some kind of logical structure, based upon tags."),
     install_requires=[
@@ -12,6 +13,6 @@ setup(
     ],
     entry_points='''
             [console_scripts]
-            sort_music=sort_music:cli
+            sort_music=music_sorter.scripts.sort_music:cli
         ''',
     )

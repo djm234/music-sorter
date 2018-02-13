@@ -79,7 +79,7 @@ def cli(in_dir, out_dir, keep_album, keep_data, filt, failure_dirname):
     if ok_to_continue:
         # Open a list of artist names we can check against (making the assumption
         # that these names are properly capitalised, etc.).
-        reference_artists = pd.read_csv('artist_data/artist_details.csv')
+        reference_artists = pd.read_csv(os.path.join(os.path.dirname(__file__), 'data/artist_details.csv'))
 
         # Find all .mp3 files in a directory/subdirectories
         filepath_dict = find_files_in_subdirs(in_dir)
