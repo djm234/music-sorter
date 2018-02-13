@@ -18,7 +18,7 @@ def sanitise_foldername(s):
     # Strip bad chars for path names
     return ''.join([c for c in s if c not in '?|"<>:;/\\.`\',*'])
 
-def map_out_directory_structure(df, out_dir='sorted_music/', include_album_in_path=False):
+def map_out_directory_structure(df, out_dir='sorted_music/', keep_album=False):
     print("Applying directory structure logic:")
     all_target_directories = []
     all_destinations = []
@@ -33,7 +33,7 @@ def map_out_directory_structure(df, out_dir='sorted_music/', include_album_in_pa
         artist = sanitise_foldername(artist)
         target_dir = os.path.join(out_dir, artist)
         # Add album name, if applicable
-        if include_album_in_path:
+        if keep_album:
             album = row['album']
             if not pd.isnull(album):
                 album = sanitise_foldername(album)

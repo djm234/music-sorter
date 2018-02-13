@@ -5,8 +5,8 @@ setup(
     version='0.1',
     author='Dan Mason',
     packages=['music_sorter',],
-    description = ("A tool to help sort out a messy music library of files into"
-                   "some kind of logical structure."),
+    description = ("A tool to help sort out a messy library of music files into"
+                   "some kind of logical structure, based upon tags."),
     install_requires=[
         'Click',
     ],
