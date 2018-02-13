@@ -1,6 +1,7 @@
 from tinytag import TinyTag
 import pandas as pd
 import tqdm
+import os
 
 def get_track_info_from_files(filepath_dict):
     # Loop over them and get details
@@ -35,6 +36,7 @@ def get_track_info_from_files(filepath_dict):
                     # Perhaps audio file was not really an mp3, or is corrupt
                     fails.append({'filename':filename, 'source':path, 'reason':'tag=None', 'filetype':filetype})
             except:
+                # Perhaps audio file was not really an mp3, or is corrupt
                 fails.append({'filename':filename, 'source':path, 'reason':'audiofile=bad', 'filetype':filetype})
 
     # Create dataframe

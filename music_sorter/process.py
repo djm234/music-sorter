@@ -27,8 +27,6 @@ def map_out_directory_structure(df, out_dir='sorted_music/', include_album_in_pa
         row = df.iloc[i]
         # Use the 'approved' name we found earlier
         artist = row['approved_name']
-        album = row['album']
-        title = row['title']
         source = row['source']
         fname = os.path.basename(source)
         # Append artist name to out directory
@@ -36,6 +34,7 @@ def map_out_directory_structure(df, out_dir='sorted_music/', include_album_in_pa
         target_dir = os.path.join(out_dir, artist)
         # Add album name, if applicable
         if include_album_in_path:
+            album = row['album']
             if not pd.isnull(album):
                 album = sanitise_foldername(album)
                 target_dir = os.path.join(target_dir, album)

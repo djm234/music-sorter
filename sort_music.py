@@ -3,7 +3,11 @@ from IPython import embed
 import pandas as pd
 import os
 import tqdm
+# Add tqdm to pandas apply functions
+tqdm.tqdm.pandas(desc="Pandas apply progress")
 
+from music_sorter.process import find_files_in_subdirs, map_out_directory_structure, backup_files_to_new_directory_structure
+from music_sorter.tagging import get_track_info_from_files, remove_duplicate_tracks, validate_artist_names, custom_tag_music
 
 if __name__ == '__main__':
     ############################
@@ -13,18 +17,13 @@ if __name__ == '__main__':
     in_dir = '../mp3/'
     # Directory to copy files to that we process
     out_dir = '../sorted_music/'
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
     # Should the files be sorted according to album also (if this information is available)?
     include_album_in_path = False
     # Keep a record of the data in the output directory
     store_track_data = True
+    ############################
     # Open a list of artist names we can check against
     reference_artists = pd.read_csv('artist_data/artist_details.csv')
-    ############################
-
-    # Add tqdm to pandas apply functions
-    tqdm.tqdm.pandas(desc="Pandas apply progress")
 
     # Find all .mp3 files in a directory/subdirectories
     filepath_dict = find_files_in_subdirs(in_dir)
@@ -44,14 +43,16 @@ if __name__ == '__main__':
     fails['approved_name'] = '_Failures'
 
     # Find out some info
-    print("Top 10 artists by track count that were found:\n{}".format(df['approved_name'].value_counts().head(10)))
-    print("The following filetypes were parsed:\n{}".format(df['filetype'].value_counts()))
+    print("\nTop 10 artists by track count that were found:\n{}".format(df['approved_name'].value_counts().head(10)))
+    print("The following filetypes were parsed:\n{}\n".format(df['filetype'].value_counts()))
 
     # Map out the directory structure that will be followed later
     # Then backup the music files to the new destination
+    print("Backing up music...")
     df = map_out_directory_structure(df, out_dir, include_album_in_path)
     backup_files_to_new_directory_structure(df)
     # Apply the same process to failures
+    print("Backing up failures...")
     fails = map_out_directory_structure(fails, out_dir, include_album_in_path)
     backup_files_to_new_directory_structure(fails)
 
