@@ -46,8 +46,11 @@ TAG_OVERRIDE_DICT = {
               type=click.Choice(TAG_OVERRIDE_DICT.keys()),
               multiple=True, show_default=True,
               help="Apply pre-configured filtering for songs that contain tags suggestive of these categories.")
-def cli(in_dir, out_dir, keep_album, keep_data, filt):
+@click.option('--failure-dirname', default='_Failures',
+              type=str, show_default=True,
+              help="Sub-directory to store files that could not be processed properly.")
 
+def cli(in_dir, out_dir, keep_album, keep_data, filt, failure_dirname):
     # Make sure paths to files the user has specified become absolute and are no longer relative
     # Directory to scan
     in_dir = os.path.abspath(in_dir)
@@ -64,7 +67,8 @@ def cli(in_dir, out_dir, keep_album, keep_data, filt):
     assert in_dir != out_dir, "You must backup your data to a different directory"
 
     if os.path.isdir(out_dir):
-        click.echo("\nCAUTION: the directory '{}' already exists.\n".format(out_dir).upper())
+        # User confirmation
+        click.echo("\nCAUTION: THE DIRECTORY '{}' ALREADY EXISTS.\n".format(out_dir))
         ok_to_continue = click.confirm(
         "Please confirm that you understand the potential consequences and are happy to carry on backing up music files to '{}'\nContinue?".format(out_dir),
         abort=False)
@@ -73,29 +77,34 @@ def cli(in_dir, out_dir, keep_album, keep_data, filt):
         ok_to_continue = True
 
     if ok_to_continue:
-        # Open a list of artist names we can check against
+        # Open a list of artist names we can check against (making the assumption
+        # that these names are properly capitalised, etc.).
         reference_artists = pd.read_csv('artist_data/artist_details.csv')
 
         # Find all .mp3 files in a directory/subdirectories
         filepath_dict = find_files_in_subdirs(in_dir)
         # Process files that are present
         df, fails = get_track_info_from_files(filepath_dict)
+        # Tag all failures the same, so they eventually end up in the same folder
+        fails['approved_name'] = failure_dirname
         # Remove duplicates found among directories
         df = remove_duplicate_tracks(df)
 
-        # See which extracted artists match a reference list, and/or set approved name to artist in each file
+        # See which extracted artists match a reference list, and/or set approved
+        # name to artist in each file
         df = validate_artist_names(df, reference_artists)
 
         # Check if any overriding tag settings have been requested
         if len(tag_override)>0:
             for d in tag_override:
                 # There may be a number of songs present that are a particular genre we wish to classify differently
-                df = custom_tag_music(df, keywords=d['keywords'], searchfields=d['searchfields'], tagname=d['tagname'], case_sensitive=d['case_sensitive'])
-                # If any of the above conditions are met, we will call the approved_name 'xmas_songs', which will be the folder htese songs are backed up to
-                df['approved_name'] = df.apply(lambda row: d['foldername'] if row[d['tagname']]==True else row['approved_name'], axis=1)
-
-        # Tag all failures the same, so they eventually end up int he same folder
-        fails['approved_name'] = '_Failures'
+                df = custom_tag_music(df, keywords=d['keywords'], searchfields=d['searchfields'],
+                                          tagname=d['tagname'], case_sensitive=d['case_sensitive'])
+                # If any of the above conditions are met, we will call the approved_name
+                # by the specific tag, which will be the folder these songs are backed up to.
+                df['approved_name'] = df.apply(lambda row: d['foldername']
+                                               if row[d['tagname']]==True
+                                               else row['approved_name'], axis=1)
 
         # Find out some info
         print("\nTop 10 artists by track count that were found:\n{}".format(df['approved_name'].value_counts().head(10)))
@@ -116,11 +125,4 @@ def cli(in_dir, out_dir, keep_album, keep_data, filt):
             df.to_csv(os.path.join(out_dir,'musicFileRecord.csv'))
             fails.to_csv(os.path.join(out_dir,'musicFileRecordFailures.csv'))
 
-
-
-
-
-
-
-
-        #
+    return
