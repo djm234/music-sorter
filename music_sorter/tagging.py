@@ -8,7 +8,7 @@ def get_track_info_from_files(filepath_dict):
     records = []
     fails = []
     for directory, files in filepath_dict.items():
-        print("Processing files in: {}".format(directory))
+        print("\nProcessing tags within files in:\n{}".format(directory))
         for filename in tqdm.tqdm(files):
             # Reconstruct path from directory and filename
             path = os.path.join(directory, filename)

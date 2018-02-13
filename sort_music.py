@@ -1,5 +1,3 @@
-from IPython import embed
-
 import pandas as pd
 import os
 import tqdm
@@ -24,6 +22,7 @@ if __name__ == '__main__':
     ############################
     # Open a list of artist names we can check against
     reference_artists = pd.read_csv('artist_data/artist_details.csv')
+    assert in_dir != out_dir, "You must backup your data to a different directory"
 
     # Find all .mp3 files in a directory/subdirectories
     filepath_dict = find_files_in_subdirs(in_dir)
@@ -62,7 +61,8 @@ if __name__ == '__main__':
         fails.to_csv(os.path.join(out_dir,'musicFileRecordFailures.csv'))
 
 
-    embed()
+    #from IPython import embed
+    #embed()
 
 
 
