@@ -1,12 +1,12 @@
 # music-sorter
 A tool that enables sorting a collection of random music files into a more structured form.
-```
-download_artist_names.py     # Downloads some artist name data to use as reference from a public GitHub repository.
-sort_music.py                # Processes the content of a user-specified music library.
-```
-Given a directory of music files (such as MP3, WAV, WMA, MP4, M4A), this tool will scan that directory, extract relevant tag data, and attempt to standardise the artist names according to a reference database of artist names.
+
+Given a directory of music files (such as MP3, WAV, WMA, MP4, M4A), this tool will scan that directory, extract relevant tag data, and (if specified) attempt to standardise the artist names according to a reference database.
 
 ## Usage
+
+This tool is designed to backup files from one location on a local machine to another, and does not make any guarantees. By using this tool you are acknowledging the potential risks or complications that could arise.
+
 ```
 Usage: sort_music [OPTIONS]
 
@@ -40,4 +40,4 @@ $ git clone https://github.com/djm234/music-sorter.git
 $ pip install music-sorter/ -r music-sorter/requirements.txt
 $ sort_music -i path/to/music/library -o path/to/new/folder -f xmas
 ```
-The tool then creates a backup of these files into another directory that follows a more structured format: `artist/album/title`, or `artist/title`. Any tracks that cannot be sufficiently identified are likely to be placed in a `_Unknown` directory. Any tracks that could not be processed by the script are placed in `_Fails`. After this point, you may decide whether the resulting structure is to your liking.
+The tool then creates a backup of these files into another directory that follows a more structured format: `artist/album/title`, or `artist/title`. Any tracks that cannot be sufficiently identified are likely to be placed in a `_Unknown` directory. Any tracks that could not be processed by the script are placed in `_Fails`. After this point, you may decide whether the resulting structure is to your liking and remove the .
