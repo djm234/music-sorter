@@ -23,6 +23,11 @@ Options:
                             [default: ]
   --failure-dirname TEXT    Sub-directory to store files that could not be
                             processed properly.  [default: _Failures]
+  --ref-artists-file PATH   Path to a file that contains reference artists
+                            (not required).
+  --dry-run                 Perform a dry run, where the file tags will be
+                            processed but music will not be backed up.
+                            [default: False]
   --help                    Show this message and exit.
 ```
 
