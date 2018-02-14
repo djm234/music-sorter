@@ -27,12 +27,12 @@ Options:
 ```
 
 #### Example
-This package uses `click` and `setuptools` to integrate the script into your `virtualenv`.
+This package uses `click` and `setuptools` to integrate the script into your `virtualenv`, meaning `sort_music` can be called within the virtualenv from anywhere.
 ```
 $ pyenv virtualenv miniconda3-latest myvirtualenv
 $ source activate myvirtualenv
-$ git clone
+$ git clone https://github.com/djm234/music-sorter.git
 $ pip install music-sorter/ -r music-sorter/requirements.txt
 $ sort_music -i path/to/music/library -o path/to/new/folder -f xmas
 ```
-The tool then creates a backup of these files into another directory that follows a more structured format: `artist/album/title`, or `artist/title`. Any tracks that cannot be sufficiently identified are likely to be placed in a `_Unknown` directory. Any tracks that could not be processed by the script are placed in `_Fails`.
+The tool then creates a backup of these files into another directory that follows a more structured format: `artist/album/title`, or `artist/title`. Any tracks that cannot be sufficiently identified are likely to be placed in a `_Unknown` directory. Any tracks that could not be processed by the script are placed in `_Fails`. After this point, you may decide whether the resulting structure is to your liking.

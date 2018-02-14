@@ -58,24 +58,29 @@ def remove_duplicate_tracks(df):
     print("There were {} duplicates, which have been removed from the record".format(pre-len(df)))
     return df
 
-def validate_artist_names(df, reference_artists, blank_name='_Unknown', capitalise_leading_chars=True):
+def validate_artist_names(df, reference_artists=None, blank_name='_Unknown', capitalise_leading_chars=True):
     # Keep note which artists were found in the directory of artists
-    artist_match = []
+    ref_artist_match = []
     approved_names = []
     for name in df['artist'].values:
-        name_low = str(name).lower()
-        hit_found = False
-        for ref_low, ref_normal in zip(reference_artists['name_lowercase'].values, reference_artists['name'].values):
-            if hit_found == False:
-                if name_low == ref_low:
-                    artist_match.append(True)
-                    approved_names.append(ref_normal)
-                    hit_found = True
-        if hit_found == False:
-            artist_match.append(False)
+        if reference_artists is None:
+            # Incase we don't have a list of names already
+            ref_artist_match.append(False)
             approved_names.append(name)
+        else:
+            name_low = str(name).lower()
+            hit_found = False
+            for ref_low, ref_normal in zip(reference_artists, reference_artists):
+                if hit_found == False:
+                    if name_low == ref_low:
+                        ref_artist_match.append(True)
+                        approved_names.append(ref_normal)
+                        hit_found = True
+            if hit_found == False:
+                ref_artist_match.append(False)
+                approved_names.append(name)
     # Add to dataframe
-    df['artist_match'] = artist_match
+    df['ref_artist_match'] = ref_artist_match
     df['approved_name'] = approved_names
     # Some artists are not found at all, or are completely blank.
     # It would be good to guess artist from the filename. Until then, we shall call them all something else:
@@ -83,8 +88,8 @@ def validate_artist_names(df, reference_artists, blank_name='_Unknown', capitali
     df['approved_name'] = df['approved_name'].apply(lambda x: blank_name if str(x).lower() in missing_artist_tags else x)
     if capitalise_leading_chars:
         df['approved_name'] = df['approved_name'].apply(lambda x: x[0].upper()+x[1:])
-    print("There are {} confirmed artists with a total of {} tracks".format(len(df[df['artist_match']==True]['artist'].unique()),
-                                                                            len(df[df['artist_match']==True])))
+    #print("There are {} confirmed artists with a total of {} tracks".format(len(df[df['ref_artist_match']==True]['artist'].unique()),
+    #                                                                        len(df[df['ref_artist_match']==True])))
     return df
 
 

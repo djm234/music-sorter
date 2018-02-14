@@ -49,8 +49,10 @@ TAG_OVERRIDE_DICT = {
 @click.option('--failure-dirname', default='_Failures',
               type=str, show_default=True,
               help="Sub-directory to store files that could not be processed properly.")
-
-def cli(in_dir, out_dir, keep_album, keep_data, filt, failure_dirname):
+@click.option('--ref-artists-file', default=None,
+              type=click.Path(exists=True), show_default=True,
+              help="Path to a file that contains reference artists (not required).")
+def cli(in_dir, out_dir, keep_album, keep_data, filt, failure_dirname, ref_artists):
     # Make sure paths to files the user has specified become absolute and are no longer relative
     # Directory to scan
     in_dir = os.path.abspath(in_dir)
@@ -79,9 +81,12 @@ def cli(in_dir, out_dir, keep_album, keep_data, filt, failure_dirname):
     if ok_to_continue:
         # Open a list of artist names we can check against (making the assumption
         # that these names are properly capitalised, etc.).
-        reference_artists = pd.read_csv(os.path.join(os.path.dirname(__file__), 'data/artist_details.csv'))
+        if ref_artists:
+            reference_artists = [x.lower() for x in pd.read_csv("Please pass a path to a file containing names")['name'].values]
+        else:
+            reference_artists = None
 
-        # Find all .mp3 files in a directory/subdirectories
+        # Find all music files in a directory/subdirectories
         filepath_dict = find_files_in_subdirs(in_dir)
         # Process files that are present
         df, fails = get_track_info_from_files(filepath_dict)
